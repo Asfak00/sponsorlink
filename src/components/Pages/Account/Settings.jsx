@@ -6,7 +6,7 @@ function Settings() {
     function Account() {
         return (
             <div>
-                
+                Account
             </div>
         );
     }
@@ -14,7 +14,7 @@ function Settings() {
     function Billing() {
         return (
             <div>
-                
+                Billing
             </div>
         );
     }

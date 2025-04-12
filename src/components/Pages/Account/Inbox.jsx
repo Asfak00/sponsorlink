@@ -16,7 +16,56 @@ export default function Inbox() {
     }, []);
 
     useEffect(() => {
-        const applications = JSON.parse(localStorage.getItem('applications') || '[]');
+        // const applications = JSON.parse(localStorage.getItem('applications') || '[]');
+
+
+        const applications = [
+            {
+                listing: {
+                    name: "John Smith",
+                    image: "https://img.freepik.com/free-photo/portrait-white-man-isolated_53876-40306.jpg"
+                },
+                status: "accepted",
+                timestamp: "2025-04-10T14:32:45Z",
+                seen: false
+            },
+            {
+                listing: {
+                    name: "Sarah Johnson",
+                    image: "https://img.freepik.com/free-photo/young-beautiful-woman-pink-warm-sweater-natural-look-smiling-portrait-isolated-long-hair_285396-896.jpg"
+                },
+                status: "rejected",
+                timestamp: "2025-04-09T10:15:22Z",
+                seen: true
+            },
+            {
+                listing: {
+                    name: "Miguel Rodriguez",
+                    image: "https://img.freepik.com/free-photo/handsome-confident-smiling-man-with-hands-crossed-chest_176420-18743.jpg"
+                },
+                status: "pending",
+                timestamp: "2025-04-11T08:45:17Z",
+                seen: false
+            },
+            {
+                listing: {
+                    name: "Priya Patel",
+                    image: "https://img.freepik.com/free-photo/young-beautiful-woman-smart-casual-wear_273609-21110.jpg"
+                },
+                status: "accepted",
+                timestamp: "2025-04-08T16:20:33Z",
+                seen: true
+            },
+            {
+                listing: {
+                    name: "Alex Chen",
+                    image: "https://img.freepik.com/free-photo/young-asian-man-wearing-blue-shirt_273609-2935.jpg"
+                },
+                status: "pending",
+                timestamp: "2025-04-12T09:05:29Z",
+                seen: false
+            }
+        ];
         
         const formattedInbox = applications.map(app => ({
             id: app.listing.name,

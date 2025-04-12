@@ -136,6 +136,7 @@
 .card-row {
     display: flex;
     gap: 1.2rem;
+    position: relative;
     align-items: flex-end;
 }
 
@@ -275,5 +276,29 @@ p.contact-info {
     }
     .pricing-card {
         padding: 2rem;
+    }
+}
+
+.circle_loader {
+    width: 15px;
+    height: 15px;
+    position: absolute;
+    top: 35px;
+    right: 9px;
+    animation: spin 1s linear infinite;
+    border-radius: 50%;
+    border-right-color: #3B9DF8 !important;
+    border: 3px solid #3b9df84b;
+}
+
+.icon {
+    position: absolute;
+    top: 35px;
+    right: 9px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
     }
 }

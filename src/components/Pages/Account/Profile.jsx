@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useRef } from "react";
 import { Divider, Input, Select, Toggle, Textarea } from "@geist-ui/core";
 import {
   Mail,
@@ -7,9 +7,11 @@ import {
   Twitter,
   Github,
   Linkedin,
-  Edit,
+  Edit, AlertCircle,
 } from "@geist-ui/icons";
 import { industryChoices, countryChoices, tagChoices } from "@/utils/constants";
+import { CheckInCircle } from '@geist-ui/icons'
+
 import { getCurrentUser, updateProfile, updateProfileImage } from "@/api/user";
 import { getIndustry } from "@/api/industry.js";
 import { getTags } from "@/api/tags.js";
@@ -63,6 +65,7 @@ const PersonalInfoForm = ({
   formData,
   editMode,
   onInputChange,
+  isUsernameChecking,
   onSelectChange,
 }) => {
   return (
@@ -182,6 +185,63 @@ const ProfileInfoForm = ({
 }) => {
   const bioCharCount = 300 - (formData.profile.bio?.length || 0);
 
+  const [usernameStatus, setUsernameStatus] = useState('idle');
+  const [usernameError, setUsernameError] = useState(null);
+  const usernameDebounceTimer = useRef(null);
+
+  const checkUsernameAvailability = async (username) => {
+    if (!username || username.length < 3) {
+      setUsernameStatus('idle');
+      return;
+    }
+
+    setUsernameStatus('checking');
+
+    try {
+      const response = await clientAxios.get(`/account/check-username/`, {
+        params: { username },
+      });
+      console.log(response.status)
+      if (response.status == 200) {
+        setUsernameStatus('available');
+        setUsernameError(null);
+      } else {
+        setUsernameStatus('taken');
+        setUsernameError(response.data.message || 'Username is already taken');
+      }
+    } catch (error) {
+      setUsernameStatus('taken');
+      setUsernameError(error.response?.data?.message || 'Error checking username');
+    }
+  };
+
+// Add a special handler for username input with debouncing
+  const handleUsernameChange = (e) => {
+    const { value } = e.target;
+
+    // // Update the form data immediately
+    onInputChange(e);
+
+    // Clear any existing timer
+    if (usernameDebounceTimer.current) {
+      clearTimeout(usernameDebounceTimer.current);
+    }
+
+    // Set a new timer (500ms delay)
+    usernameDebounceTimer.current = setTimeout(() => {
+      checkUsernameAvailability(value);
+    }, 500);
+  };
+
+// Cleanup the timer when component unmounts
+  useEffect(() => {
+    return () => {
+      if (usernameDebounceTimer.current) {
+        clearTimeout(usernameDebounceTimer.current);
+      }
+    };
+  }, []);
+
   return (
     <>
       <div className="card-row">
@@ -203,28 +263,39 @@ const ProfileInfoForm = ({
 
       <div className="card-row">
         <Input
-          name="username"
-          value={formData.username}
-          onChange={onInputChange}
-          placeholder="Username"
-          width="100%"
-          readOnly={!editMode}
+            name="username"
+            value={formData.username}
+            onInput={handleUsernameChange}
+            placeholder="Username"
+            width="100%"
+            readOnly={!editMode}
         >
           Username
         </Input>
+
+          {usernameStatus === 'checking' && (
+              <div className="circle_loader"></div>
+          )}
+          {usernameStatus === 'available' && (
+              <CheckInCircle fontSize={20} color='green' className='icon' size={20}/>
+          )}
+          {usernameStatus === 'taken' && (
+              <AlertCircle fontSize={20} color='red' className='icon' size={20}/>
+          )}
+
       </div>
 
       <div className="card-row">
-        <div style={{ width: "100%" }}>
+        <div style={{width: "100%"}}>
           <div className="select-label">Bio</div>
           <Textarea
-            name="profile.bio"
-            value={formData.profile.bio}
-            onChange={(e) => onSelectChange(e.target.value, "profile.bio")}
-            placeholder="Bio"
-            width="100%"
-            readOnly={!editMode}
-            maxLength={300}
+              name="profile.bio"
+              value={formData.profile.bio}
+              onChange={(e) => onSelectChange(e.target.value, "profile.bio")}
+              placeholder="Bio"
+              width="100%"
+              readOnly={!editMode}
+              maxLength={300}
             style={{ minHeight: "125px" }}
           />
           <div className="bio-char-counter">{bioCharCount} characters left</div>
@@ -369,6 +440,7 @@ export default function Profile() {
   const [userData, setUserData] = useState(null);
   const [formData, setFormData] = useState(null);
   const [editMode, setEditMode] = useState(false);
+  const [isUsernameChecking, setIsUsernameChecking] = useState(false);
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [tempImageFile, setTempImageFile] = useState();
   const [industries, setIndustries] = useState([]);
@@ -385,6 +457,8 @@ export default function Profile() {
       setTags(data);
     });
   }, []);
+
+
 
   useEffect(() => {
     const cachedData = sessionStorage.getItem("user");
@@ -648,6 +722,7 @@ export default function Profile() {
           <PersonalInfoForm
             formData={formData}
             editMode={editMode}
+            isUsernameChecking={isUsernameChecking}
             onInputChange={handleInputChange}
             onSelectChange={handleSelectChange}
           />
