@@ -188,59 +188,56 @@ const ProfileInfoForm = ({
   const [usernameStatus, setUsernameStatus] = useState('idle');
   const [usernameError, setUsernameError] = useState(null);
   const usernameDebounceTimer = useRef(null);
+  const [displayUsername, setDisplayUsername] = useState(formData.username || "");
 
-  const checkUsernameAvailability = async (username) => {
-    if (!username || username.length < 3) {
-      setUsernameStatus('idle');
-      return;
-    }
+    const handleUsernameChange = (e) => {
+        const { value } = e.target;
 
-    setUsernameStatus('checking');
+        setDisplayUsername(value);
 
-    try {
-      const response = await clientAxios.get(`/account/check-username/`, {
-        params: { username },
-      });
-      console.log(response.status)
-      if (response.status == 200) {
-        setUsernameStatus('available');
-        setUsernameError(null);
-      } else {
-        setUsernameStatus('taken');
-        setUsernameError(response.data.message || 'Username is already taken');
-      }
-    } catch (error) {
-      setUsernameStatus('taken');
-      setUsernameError(error.response?.data?.message || 'Error checking username');
-    }
-  };
+        if (usernameDebounceTimer.current) {
+            clearTimeout(usernameDebounceTimer.current);
+        }
 
-// Add a special handler for username input with debouncing
-  const handleUsernameChange = (e) => {
-    const { value } = e.target;
+        if (!value || value.length < 3) {
+            setUsernameStatus('idle');
+            return;
+        }
 
-    // // Update the form data immediately
-    onInputChange(e);
+        setUsernameStatus('checking');
 
-    // Clear any existing timer
-    if (usernameDebounceTimer.current) {
-      clearTimeout(usernameDebounceTimer.current);
-    }
+        usernameDebounceTimer.current = setTimeout(async () => {
+            try {
+                const response = await clientAxios.get(`/account/check-username/`, {
+                    params: { username: value },
+                });
 
-    // Set a new timer (500ms delay)
-    usernameDebounceTimer.current = setTimeout(() => {
-      checkUsernameAvailability(value);
-    }, 500);
-  };
+                if (response.status === 200) {
+                    setUsernameStatus('available');
+                    setUsernameError(null);
 
-// Cleanup the timer when component unmounts
-  useEffect(() => {
-    return () => {
-      if (usernameDebounceTimer.current) {
-        clearTimeout(usernameDebounceTimer.current);
-      }
+                    onInputChange({
+                        target: {
+                            name: "username",
+                            value: value
+                        }
+                    });
+                } else {
+                    setUsernameStatus('taken');
+                    setUsernameError(response.data.message || 'Username is already taken');
+                }
+            } catch (error) {
+                setUsernameStatus('taken');
+                setUsernameError(error.response?.data?.message || 'Error checking username');
+            }
+        }, 500);
     };
-  }, []);
+
+    useEffect(() => {
+        if (formData && formData.username) {
+            setDisplayUsername(formData.username);
+        }
+    }, [formData?.username]);
 
   return (
     <>
@@ -264,7 +261,7 @@ const ProfileInfoForm = ({
       <div className="card-row">
         <Input
             name="username"
-            value={formData.username}
+            value={displayUsername}
             onInput={handleUsernameChange}
             placeholder="Username"
             width="100%"
